@@ -6,7 +6,7 @@ st.set_page_config(page_title="Superstore Dashboard", layout="wide")
 st.title("Superstore Interactive Dashboard")
 
 # -----------------------------
-# 1️⃣ Load Excel Data
+# Load Excel Data dari GitHub
 # -----------------------------
 BASE_URL = "https://raw.githubusercontent.com/sorcoffee/superstore_dashboard/main/data/"
 
@@ -15,29 +15,31 @@ stock_df = pd.read_excel(f"{BASE_URL}product_stock.xlsx")
 customer_df = pd.read_excel(f"{BASE_URL}superstore_customer.xlsx")
 product_df = pd.read_excel(f"{BASE_URL}superstore_product.xlsx")
 
+# Normalisasi nama kolom
 for df in [order_df, stock_df, customer_df, product_df]:
     df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_')
 
+# Convert numeric columns
 for col in ['sales','profit','quantity','stock']:
     for df in [order_df, stock_df]:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors='coerce')
 
 # -----------------------------
-# 2️⃣ Sidebar Filters
+# Sidebar Filters
 # -----------------------------
-selected_regions = st.sidebar.multiselect(
-    "Select Region", options=order_df['region'].dropna().unique(), default=order_df['region'].dropna().unique()
-)
-selected_segments = st.sidebar.multiselect(
-    "Select Customer Segment", options=customer_df['segment'].dropna().unique(), default=customer_df['segment'].dropna().unique()
-)
+selected_region = st.sidebar.multiselect("Select Region",
+                                         order_df['region'].dropna().unique(),
+                                         default=order_df['region'].dropna().unique())
+selected_segment = st.sidebar.multiselect("Select Customer Segment",
+                                          customer_df['segment'].dropna().unique(),
+                                          default=customer_df['segment'].dropna().unique())
 
-filtered_orders = order_df[order_df['region'].isin(selected_regions)]
-filtered_customers = customer_df[customer_df['segment'].isin(selected_segments)]
+filtered_orders = order_df[order_df['region'].isin(selected_region)]
+filtered_customers = customer_df[customer_df['segment'].isin(selected_segment)]
 
 # -----------------------------
-# 3️⃣ Summary Metrics
+# Summary Metrics
 # -----------------------------
 total_sales = filtered_orders['sales'].sum()
 total_profit = filtered_orders['profit'].sum()
@@ -51,73 +53,77 @@ col3.metric("Total Quantity", f"{total_quantity:,.0f}")
 col4.metric("Average Sales", f"${average_sales:,.2f}")
 
 # -----------------------------
-# 4️⃣ Profit Category per Order (Pie)
+# Profit Category per Order → Pie
 # -----------------------------
-filtered_orders['profit_category'] = filtered_orders['profit'].apply(
-    lambda x: 'High' if x>100 else 'Medium' if x>=50 else 'Low'
-)
+def profit_category(profit):
+    if profit > 100:
+        return 'High Profit'
+    elif 50 <= profit <= 100:
+        return 'Medium Profit'
+    else:
+        return 'Low Profit'
+
+filtered_orders['profit_category'] = filtered_orders['profit'].apply(profit_category)
 profit_counts = filtered_orders['profit_category'].value_counts().reset_index()
 profit_counts.columns = ['Category','Count']
+
 fig1 = px.pie(profit_counts, names='Category', values='Count', title='Profit Category Distribution')
 st.plotly_chart(fig1, use_container_width=True)
 
 # -----------------------------
-# 5️⃣ Order Size by Quantity (Bar + Color)
+# Order Size → Bar
 # -----------------------------
-filtered_orders['order_size'] = filtered_orders['quantity'].apply(lambda x: 'Large' if x>=10 else 'Small')
+def order_size(qty):
+    return 'Large Order' if qty >= 10 else 'Small Order'
+
+filtered_orders['order_size'] = filtered_orders['quantity'].apply(order_size)
 size_counts = filtered_orders['order_size'].value_counts().reset_index()
 size_counts.columns = ['Order Size','Count']
-fig2 = px.bar(size_counts, x='Order Size', y='Count', color='Order Size', text='Count', title='Order Size Distribution')
+
+fig2 = px.bar(size_counts, x='Order Size', y='Count', text='Count', title='Order Size Distribution')
 st.plotly_chart(fig2, use_container_width=True)
 
 # -----------------------------
-# 6️⃣ Low Stock Products (DataFrame)
+# Top Customers → Bubble Chart
+# -----------------------------
+avg_sales_customer = (filtered_orders.groupby(['customer_id','customer_name'])['sales']
+                      .mean()
+                      .reset_index()
+                      .sort_values(by='sales', ascending=False)
+                      .head(15))
+fig3 = px.scatter(avg_sales_customer, x='customer_name', y='sales',
+                  size='sales', color='sales',
+                  title='Top Customers by Avg Sales', size_max=60)
+st.plotly_chart(fig3, use_container_width=True)
+
+# -----------------------------
+# Total Sales Over Time → Line Chart
+# -----------------------------
+if 'order_date' in filtered_orders.columns:
+    filtered_orders['order_date'] = pd.to_datetime(filtered_orders['order_date'], errors='coerce')
+    sales_over_time = filtered_orders.groupby('order_date')['sales'].sum().reset_index()
+    fig4 = px.line(sales_over_time, x='order_date', y='sales', title='Total Sales Over Time')
+    st.plotly_chart(fig4, use_container_width=True)
+
+# -----------------------------
+# Sales vs Profit → Scatter
+# -----------------------------
+fig5 = px.scatter(filtered_orders, x='sales', y='profit',
+                  hover_data=['product_name', 'order_id'],
+                  title='Sales vs Profit per Order')
+st.plotly_chart(fig5, use_container_width=True)
+
+# -----------------------------
+# Region Profit Treemap
+# -----------------------------
+profit_region = filtered_orders.groupby(['region','product_name'])['profit'].sum().reset_index()
+fig6 = px.treemap(profit_region, path=['region','product_name'], values='profit',
+                  color='profit', title='Profit Distribution per Region & Product')
+st.plotly_chart(fig6, use_container_width=True)
+
+# -----------------------------
+# Low Stock → Heatmap Table
 # -----------------------------
 low_stock = stock_df[stock_df['stock'] < 50]
 st.subheader("Products Low Stock (<50)")
 st.dataframe(low_stock)
-
-# -----------------------------
-# 7️⃣ Top Products by Sales (Bar + Line)
-# -----------------------------
-top_products = (filtered_orders.groupby('product_name')['sales']
-                .sum().reset_index()
-                .sort_values(by='sales', ascending=False).head(10))
-fig3_bar = px.bar(top_products, x='product_name', y='sales', text='sales', title='Top 10 Products by Sales')
-fig3_line = px.line(top_products, x='product_name', y='sales', markers=True, title='Sales Trend of Top Products')
-st.plotly_chart(fig3_bar, use_container_width=True)
-st.plotly_chart(fig3_line, use_container_width=True)
-
-# -----------------------------
-# 8️⃣ Total Profit per Region (Bar + Pie)
-# -----------------------------
-profit_region = filtered_orders.groupby('region')['profit'].sum().reset_index()
-fig4_bar = px.bar(profit_region, x='region', y='profit', text='profit', title='Total Profit per Region')
-fig4_pie = px.pie(profit_region, names='region', values='profit', title='Profit Share by Region')
-st.plotly_chart(fig4_bar, use_container_width=True)
-st.plotly_chart(fig4_pie, use_container_width=True)
-
-# -----------------------------
-# 9️⃣ Top Customers by Average Sales (Bar + Scatter)
-# -----------------------------
-avg_sales_customer = filtered_orders.groupby(['customer_id','customer_name'])['sales'].mean().reset_index()
-avg_sales_customer = avg_sales_customer.sort_values(by='sales', ascending=False).head(10)
-fig5_bar = px.bar(avg_sales_customer, x='customer_name', y='sales', text='sales', title='Top 10 Customers by Avg Sales')
-fig5_scatter = px.scatter(avg_sales_customer, x='customer_name', y='sales', size='sales', color='sales', title='Top Customers Scatter')
-st.plotly_chart(fig5_bar, use_container_width=True)
-st.plotly_chart(fig5_scatter, use_container_width=True)
-
-# -----------------------------
-# 10️⃣ Region West Aggregates (Bar + Color)
-# -----------------------------
-west_orders = filtered_orders[filtered_orders['region']=='West']
-agg_west = west_orders.groupby(['product_id','product_name']).agg(
-    total_quantity=('quantity','sum'),
-    total_sales=('sales','sum'),
-    total_profit=('profit','sum')
-).reset_index()
-agg_west['profit_category'] = agg_west['total_profit'].apply(lambda x: 'High' if x>1000 else 'Low/Medium')
-st.subheader("Region West: Product Aggregates")
-st.dataframe(agg_west)
-fig_west = px.bar(agg_west, x='product_name', y='total_sales', color='profit_category', text='total_sales', title='Region West: Sales per Product')
-st.plotly_chart(fig_west, use_container_width=True)
