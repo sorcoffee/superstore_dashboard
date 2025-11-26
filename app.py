@@ -12,10 +12,15 @@ import pandas as pd
 
 BASE_URL = "https://raw.githubusercontent.com/sorcoffee/superstore_dashboard/main/data/"
 
+# Baca Excel
 order_df = pd.read_excel(f"{BASE_URL}superstore_order.xlsx")
 stock_df = pd.read_excel(f"{BASE_URL}product_stock.xlsx")
 customer_df = pd.read_excel(f"{BASE_URL}superstore_customer.xlsx")
 product_df = pd.read_excel(f"{BASE_URL}superstore_product.xlsx")
+
+# Normalisasi nama kolom: hilangkan spasi + lowercase
+for df in [order_df, stock_df, customer_df, product_df]:
+    df.columns = df.columns.str.strip().str.lower()
 # -----------------------------
 # 2️⃣ Convert numeric columns
 # -----------------------------
