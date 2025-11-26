@@ -63,15 +63,13 @@ fig1 = px.pie(profit_counts, names='Category', values='Count', title='Profit Cat
 st.plotly_chart(fig1, use_container_width=True)
 
 # -----------------------------
-# 5️⃣ Order Size by Quantity (Treemap)
+# 5️⃣ Order Size by Quantity (Bar)
 # -----------------------------
 filtered_orders['order_size'] = filtered_orders['quantity'].apply(lambda x: 'Large' if x>=10 else 'Small')
 size_counts = filtered_orders['order_size'].value_counts().reset_index()
 size_counts.columns = ['Order Size','Count']
 
-fig2 = px.treemap(size_counts, path=['Order Size'], values='Count', color='Order Size',
-                  color_discrete_map={'Large':'red','Small':'green'},
-                  title='Order Size Distribution')
+fig2 = px.bar(size_counts, x='Order Size', y='Count', color='Order Size', text='Count', title='Order Size Distribution')
 st.plotly_chart(fig2, use_container_width=True)
 
 # -----------------------------
@@ -83,22 +81,23 @@ fig_low_stock = px.line(low_stock, x='product_name', y='stock', markers=True,
 st.plotly_chart(fig_low_stock, use_container_width=True)
 
 # -----------------------------
-# 7️⃣ Top Products by Sales (Line + Area)
+# 7️⃣ Top Products by Sales (Bar)
 # -----------------------------
 top_products = filtered_orders.groupby('product_name')['sales'].sum().reset_index()
 top_products = top_products.sort_values(by='sales', ascending=False).head(10)
 
-fig3_line = px.line(top_products, x='product_name', y='sales', markers=True, title='Sales Trend of Top Products')
-fig3_area = px.area(top_products, x='product_name', y='sales', title='Cumulative Sales of Top Products', markers=True)
-st.plotly_chart(fig3_line, use_container_width=True)
-st.plotly_chart(fig3_area, use_container_width=True)
+fig3_bar = px.bar(top_products, x='product_name', y='sales', text='sales', title='Top 10 Products by Sales')
+st.plotly_chart(fig3_bar, use_container_width=True)
 
 # -----------------------------
-# 8️⃣ Total Profit per Region (Treemap)
+# 8️⃣ Total Profit per Region (Bar + Pie)
 # -----------------------------
 profit_region = filtered_orders.groupby('region')['profit'].sum().reset_index()
-fig4_treemap = px.treemap(profit_region, path=['region'], values='profit', color='profit', title='Profit Share by Region')
-st.plotly_chart(fig4_treemap, use_container_width=True)
+fig4_bar = px.bar(profit_region, x='region', y='profit', text='profit', title='Total Profit per Region')
+fig4_pie = px.pie(profit_region, names='region', values='profit', title='Profit Share by Region')
+
+st.plotly_chart(fig4_bar, use_container_width=True)
+st.plotly_chart(fig4_pie, use_container_width=True)
 
 # -----------------------------
 # 9️⃣ Top Customers by Average Sales (Bubble)
