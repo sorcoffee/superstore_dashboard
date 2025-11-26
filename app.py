@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 
 st.set_page_config(page_title="Superstore Dashboard", layout="wide")
-st.title("Superstore Dashboard Professional")
+st.title("Superstore Dashboard")
 
 # -----------------------------
 # 1️⃣ Load Excel Data
