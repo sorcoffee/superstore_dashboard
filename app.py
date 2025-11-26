@@ -6,12 +6,14 @@ st.set_page_config(page_title="Superstore Dashboard", layout="wide")
 st.title("Superstore Interactive Dashboard")
 
 # -----------------------------
-# 1️⃣ Load CSV Data
+# 1️⃣ Load CSV Data langsung dari GitHub
 # -----------------------------
-order_df = pd.read_csv("data/superstore_order.csv")
-customer_df = pd.read_csv("data/superstore_customer.csv")
-stock_df = pd.read_csv("data/product_stock.csv")
-product_df = pd.read_csv("data/superstore_product.csv")
+BASE_URL = "https://raw.githubusercontent.com/sorcoffee/superstore_dashboard/main/data/"
+
+order_df = pd.read_csv(f"{BASE_URL}superstore_order.csv")
+customer_df = pd.read_csv(f"{BASE_URL}superstore_customer.csv")
+stock_df = pd.read_csv(f"{BASE_URL}product_stock.csv")
+product_df = pd.read_csv(f"{BASE_URL}superstore_product.csv")
 
 # -----------------------------
 # 2️⃣ Convert numeric columns
