@@ -100,13 +100,13 @@ st.plotly_chart(fig4_bar, use_container_width=True)
 st.plotly_chart(fig4_pie, use_container_width=True)
 
 # -----------------------------
-# 9️⃣ Top Customers by Average Sales (Bubble)
+# 9️⃣ Top Customers by Average Sales
 # -----------------------------
 avg_sales_customer = filtered_orders.groupby(['customer_id','customer_name'])['sales'].mean().reset_index()
 avg_sales_customer = avg_sales_customer.sort_values(by='sales', ascending=False).head(10)
 
 fig5_bubble = px.scatter(avg_sales_customer, x='customer_name', y='sales', size='sales', color='sales',
-                         color_continuous_scale='Viridis', title='Top Customers Bubble Chart')
+                         color_continuous_scale='Viridis', title='Top Customers')
 st.plotly_chart(fig5_bubble, use_container_width=True)
 
 # -----------------------------
