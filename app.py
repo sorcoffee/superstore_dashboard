@@ -90,7 +90,7 @@ fig3_bar = px.bar(top_products, x='product_name', y='sales', text='sales', title
 st.plotly_chart(fig3_bar, use_container_width=True)
 
 # -----------------------------
-# 8️⃣ Total Profit per Region (Bar + Pie)
+# 8️⃣ Total Profit per Region 
 # -----------------------------
 profit_region = filtered_orders.groupby('region')['profit'].sum().reset_index()
 fig4_bar = px.bar(profit_region, x='region', y='profit', text='profit', title='Total Profit per Region')
@@ -108,20 +108,3 @@ avg_sales_customer = avg_sales_customer.sort_values(by='sales', ascending=False)
 fig5_bubble = px.scatter(avg_sales_customer, x='customer_name', y='sales', size='sales', color='sales',
                          color_continuous_scale='Viridis', title='Top Customers')
 st.plotly_chart(fig5_bubble, use_container_width=True)
-
-# -----------------------------
-# 10️⃣ Region West Aggregates (Line + Area)
-# -----------------------------
-west_orders = filtered_orders[filtered_orders['region']=='West']
-agg_west = west_orders.groupby(['product_id','product_name']).agg(
-    total_quantity=('quantity','sum'),
-    total_sales=('sales','sum'),
-    total_profit=('profit','sum')
-).reset_index()
-agg_west['profit_category'] = agg_west['total_profit'].apply(lambda x: 'High' if x>1000 else 'Low/Medium')
-
-fig_west_line = px.line(agg_west, x='product_name', y='total_sales', color='profit_category', markers=True, title='Region West: Sales per Product')
-fig_west_area = px.area(agg_west, x='product_name', y='total_sales', color='profit_category', title='Region West: Cumulative Sales', markers=True)
-
-st.plotly_chart(fig_west_line, use_container_width=True)
-st.plotly_chart(fig_west_area, use_container_width=True)
