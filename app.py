@@ -8,13 +8,14 @@ st.title("Superstore Interactive Dashboard")
 # -----------------------------
 # 1️⃣ Load CSV Data langsung dari GitHub
 # -----------------------------
+import pandas as pd
+
 BASE_URL = "https://raw.githubusercontent.com/sorcoffee/superstore_dashboard/main/data/"
 
-order_df = pd.read_csv("data/superstore_order.csv")
-customer_df = pd.read_csv("data/superstore_customer.csv")
-stock_df = pd.read_csv("data/product_stock.csv")
-product_df = pd.read_csv("data/superstore_product.csv")
-
+order_df = pd.read_excel(f"{BASE_URL}superstore_order.xlsx")
+stock_df = pd.read_excel(f"{BASE_URL}product_stock.xlsx")
+customer_df = pd.read_excel(f"{BASE_URL}superstore_customer.xlsx")
+product_df = pd.read_excel(f"{BASE_URL}superstore_product.xlsx")
 # -----------------------------
 # 2️⃣ Convert numeric columns
 # -----------------------------
