@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 
 st.set_page_config(page_title="Superstore Dashboard", layout="wide")
-st.title("Superstore Dashboard")
+st.title("Superstore Dashboard Professional")
 
 # -----------------------------
 # 1️⃣ Load Excel Data
@@ -51,64 +51,67 @@ col3.metric("Total Quantity", f"{total_quantity:,.0f}")
 col4.metric("Average Sales", f"${average_sales:,.2f}")
 
 # -----------------------------
-# 4️⃣ Profit Category per Order (Pie)
+# 4️⃣ Profit Category per Order (Donut)
 # -----------------------------
 filtered_orders['profit_category'] = filtered_orders['profit'].apply(
     lambda x: 'High' if x>100 else 'Medium' if x>=50 else 'Low'
 )
 profit_counts = filtered_orders['profit_category'].value_counts().reset_index()
 profit_counts.columns = ['Category','Count']
-fig1 = px.pie(profit_counts, names='Category', values='Count', title='Profit Category Distribution')
+
+fig1 = px.pie(profit_counts, names='Category', values='Count', title='Profit Category Distribution', hole=0.3)
 st.plotly_chart(fig1, use_container_width=True)
 
 # -----------------------------
-# 5️⃣ Order Size by Quantity (Bar + Color)
+# 5️⃣ Order Size by Quantity (Treemap)
 # -----------------------------
 filtered_orders['order_size'] = filtered_orders['quantity'].apply(lambda x: 'Large' if x>=10 else 'Small')
 size_counts = filtered_orders['order_size'].value_counts().reset_index()
 size_counts.columns = ['Order Size','Count']
-fig2 = px.bar(size_counts, x='Order Size', y='Count', color='Order Size', text='Count', title='Order Size Distribution')
+
+fig2 = px.treemap(size_counts, path=['Order Size'], values='Count', color='Order Size',
+                  color_discrete_map={'Large':'red','Small':'green'},
+                  title='Order Size Distribution')
 st.plotly_chart(fig2, use_container_width=True)
 
 # -----------------------------
-# 6️⃣ Low Stock Products (DataFrame)
+# 6️⃣ Low Stock Products (Line Chart)
 # -----------------------------
 low_stock = stock_df[stock_df['stock'] < 50]
-st.subheader("Products Low Stock (<50)")
-st.dataframe(low_stock)
+fig_low_stock = px.line(low_stock, x='product_name', y='stock', markers=True,
+                        title='Low Stock Products (<50 units)')
+st.plotly_chart(fig_low_stock, use_container_width=True)
 
 # -----------------------------
-# 7️⃣ Top Products by Sales (Bar + Line)
+# 7️⃣ Top Products by Sales (Line + Area)
 # -----------------------------
-top_products = (filtered_orders.groupby('product_name')['sales']
-                .sum().reset_index()
-                .sort_values(by='sales', ascending=False).head(10))
-fig3_bar = px.bar(top_products, x='product_name', y='sales', text='sales', title='Top 10 Products by Sales')
+top_products = filtered_orders.groupby('product_name')['sales'].sum().reset_index()
+top_products = top_products.sort_values(by='sales', ascending=False).head(10)
+
 fig3_line = px.line(top_products, x='product_name', y='sales', markers=True, title='Sales Trend of Top Products')
-st.plotly_chart(fig3_bar, use_container_width=True)
+fig3_area = px.area(top_products, x='product_name', y='sales', title='Cumulative Sales of Top Products', markers=True)
 st.plotly_chart(fig3_line, use_container_width=True)
+st.plotly_chart(fig3_area, use_container_width=True)
 
 # -----------------------------
-# 8️⃣ Total Profit per Region (Bar + Pie)
+# 8️⃣ Total Profit per Region (Treemap)
 # -----------------------------
 profit_region = filtered_orders.groupby('region')['profit'].sum().reset_index()
-fig4_bar = px.bar(profit_region, x='region', y='profit', text='profit', title='Total Profit per Region')
-fig4_pie = px.pie(profit_region, names='region', values='profit', title='Profit Share by Region')
-st.plotly_chart(fig4_bar, use_container_width=True)
-st.plotly_chart(fig4_pie, use_container_width=True)
+fig4_treemap = px.treemap(profit_region, path=['region'], values='profit', color='profit', title='Profit Share by Region')
+st.plotly_chart(fig4_treemap, use_container_width=True)
 
 # -----------------------------
-# 9️⃣ Top Customers by Average Sales (Bar + Scatter)
+# 9️⃣ Top Customers by Average Sales (Bubble)
 # -----------------------------
 avg_sales_customer = filtered_orders.groupby(['customer_id','customer_name'])['sales'].mean().reset_index()
 avg_sales_customer = avg_sales_customer.sort_values(by='sales', ascending=False).head(10)
-fig5_bar = px.bar(avg_sales_customer, x='customer_name', y='sales', text='sales', title='Top 10 Customers by Avg Sales')
-fig5_scatter = px.scatter(avg_sales_customer, x='customer_name', y='sales', size='sales', color='sales', title='Top Customers Scatter')
-st.plotly_chart(fig5_bar, use_container_width=True)
-st.plotly_chart(fig5_scatter, use_container_width=True)
+
+fig5_bubble = px.scatter(avg_sales_customer, x='customer_name', y='sales', size='sales', color='sales',
+                         color_continuous_scale='Viridis', title='Top Customers Bubble Chart')
+st.plotly_chart(fig5_bubble, use_container_width=True)
 
 # -----------------------------
-# 10️⃣ Region West Aggregates (Bar + Color)
+# 10️⃣ Region West Aggregates (Line + Area)
 # -----------------------------
 west_orders = filtered_orders[filtered_orders['region']=='West']
 agg_west = west_orders.groupby(['product_id','product_name']).agg(
@@ -117,7 +120,9 @@ agg_west = west_orders.groupby(['product_id','product_name']).agg(
     total_profit=('profit','sum')
 ).reset_index()
 agg_west['profit_category'] = agg_west['total_profit'].apply(lambda x: 'High' if x>1000 else 'Low/Medium')
-st.subheader("Region West: Product Aggregates")
-st.dataframe(agg_west)
-fig_west = px.bar(agg_west, x='product_name', y='total_sales', color='profit_category', text='total_sales', title='Region West: Sales per Product')
-st.plotly_chart(fig_west, use_container_width=True)
+
+fig_west_line = px.line(agg_west, x='product_name', y='total_sales', color='profit_category', markers=True, title='Region West: Sales per Product')
+fig_west_area = px.area(agg_west, x='product_name', y='total_sales', color='profit_category', title='Region West: Cumulative Sales', markers=True)
+
+st.plotly_chart(fig_west_line, use_container_width=True)
+st.plotly_chart(fig_west_area, use_container_width=True)
