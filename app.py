@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-st.set_page_config(page_title="Superstore Dashboard", layout="wide")
+st.set_page_config(page_title="Superstore Data Visualization", layout="wide")
 st.title("Superstore Dashboard")
 
 # -----------------------------
